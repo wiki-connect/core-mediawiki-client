@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.qrdlife.wikiconnect.mediawiki.client.Auth.UserAndPassword;
 
 import java.util.Map;
 
@@ -14,7 +15,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AuthTest {
+class UserAndPasswordTest {
 
     @Mock
     private ActionApi mockApi;
@@ -22,7 +23,7 @@ class AuthTest {
     @Mock
     private Requester mockRequester;
 
-    private Auth auth;
+    private UserAndPassword auth;
     private final String testUsername = "testuser";
     private final String testPassword = "testpass";
     private final String testToken = "testToken123";
@@ -31,7 +32,7 @@ class AuthTest {
     @BeforeEach
     void setUp() {
         when(mockApi.getRequester()).thenReturn(mockRequester);
-        auth = new Auth(testUsername, testPassword, mockApi);
+        auth = new UserAndPassword(testUsername, testPassword, mockApi);
     }
 
     @Test

@@ -4,6 +4,7 @@ import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
+import org.qrdlife.wikiconnect.mediawiki.client.Auth.UserAndPassword;
 import org.qrdlife.wikiconnect.mediawiki.client.cookie.FileCookieJar;
 
 import java.io.File;
@@ -59,7 +60,7 @@ public class ActionApi {
     private final HttpClientContext context;
 
     /** Authentication handler (optional). */
-    private Auth auth;
+    private UserAndPassword auth;
 
     /**
      * Creates a new {@code ActionApi} instance with the given API endpoint.
@@ -115,12 +116,12 @@ public class ActionApi {
     }
 
     /**
-     * Associates an {@link Auth} instance with this API client.
+     * Associates an {@link UserAndPassword} instance with this API client.
      *
      * @param auth the authentication handler.
      * @return this instance for method chaining.
      */
-    public ActionApi setAuth(Auth auth) {
+    public ActionApi setAuth(UserAndPassword auth) {
         this.auth = auth;
         logger.info("Authentication set");
         return this;
@@ -168,11 +169,11 @@ public class ActionApi {
     }
 
     /**
-     * Returns the {@link Auth} instance associated with this API client.
+     * Returns the {@link UserAndPassword} instance associated with this API client.
      *
      * @return the authentication handler, or {@code null} if none is set.
      */
-    public Auth getAuth() {
+    public UserAndPassword getAuth() {
         return auth;
     }
     /**

@@ -1,6 +1,8 @@
-package org.qrdlife.wikiconnect.mediawiki.client;
+package org.qrdlife.wikiconnect.mediawiki.client.Auth;
 
 import org.json.JSONObject;
+import org.qrdlife.wikiconnect.mediawiki.client.ActionApi;
+import org.qrdlife.wikiconnect.mediawiki.client.Requester;
 
 import java.io.IOException;
 import java.util.Map;
@@ -28,9 +30,9 @@ import java.util.logging.Logger;
  * }
  * }</pre>
  */
-public class Auth {
+public class UserAndPassword implements Auth {
 
-    private static final Logger logger = Logger.getLogger(Auth.class.getName());
+    private static final Logger logger = Logger.getLogger(UserAndPassword.class.getName());
 
     private final String Username;
     private final String Password;
@@ -45,7 +47,7 @@ public class Auth {
      * @param password the MediaWiki password.
      * @param api the {@link ActionApi} instance for handling requests.
      */
-    public Auth(String username, String password, ActionApi api) {
+    public UserAndPassword(String username, String password, ActionApi api) {
         this.Username = username;
         this.Password = password;
         this.api = api;
@@ -61,6 +63,7 @@ public class Auth {
      * @throws Exception if an error occurs while retrieving the login token
      *                   or sending the login request (e.g., network errors, JSON parsing issues).
      */
+    @Override
     public boolean login() throws Exception {
         logger.info("Attempting to log in user: " + Username);
         if (isLoggedIn()) {
@@ -102,6 +105,7 @@ public class Auth {
      * @throws Exception if an error occurs while retrieving the CSRF token
      *                   or sending the logout request.
      */
+    @Override
     public void logout() throws Exception {
         if (!isLoggedIn()) {
             logger.warning("User is not logged in. Cannot perform logout.");
@@ -125,6 +129,7 @@ public class Auth {
      *
      * @return the username used during initialization.
      */
+    @Override
     public String getUsername() {
         return Username;
     }
@@ -139,6 +144,7 @@ public class Auth {
      * @return the real username of the authenticated user.
      * @throws Exception if the API request fails (e.g., network error, JSON parsing error).
      */
+    @Override
     public String getRUsername() throws Exception {
         if (RUsername == null) {
             Map<String, Object> perms = Map.of(
@@ -159,6 +165,7 @@ public class Auth {
      * @return {@code true} if the user is logged in, {@code false} otherwise.
      * @throws Exception if the API request fails (e.g., network error, JSON parsing error).
      */
+    @Override
     public boolean isLoggedIn() throws Exception {
         logger.info("Checking if user is logged in");
 
