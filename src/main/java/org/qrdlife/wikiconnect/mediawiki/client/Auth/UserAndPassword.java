@@ -196,7 +196,9 @@ public class UserAndPassword implements Auth {
         }
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public Map<String, String> getAuthHeaders() throws Exception {
         return new java.util.HashMap<>();

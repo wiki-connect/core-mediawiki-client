@@ -6,12 +6,24 @@ import org.json.JSONObject;
 import org.qrdlife.wikiconnect.mediawiki.client.ActionApi;
 import org.qrdlife.wikiconnect.mediawiki.client.Requester;
 
+/**
+ * Authentication implementation using OAuth 2.0 Owner-Only Consumer.
+ * <p>
+ * This class handles authentication using a static access token.
+ * </p>
+ */
 public class OAuthOwnerConsumer implements Auth {
     private final String AccessToken;
     private final ActionApi api;
     private final Requester requester;
     private final Logger logger = Logger.getLogger(OAuthOwnerConsumer.class.getName());
 
+    /**
+     * Constructs a new OAuthOwnerConsumer.
+     *
+     * @param accessToken The OAuth 2.0 access token.
+     * @param api         The ActionApi instance.
+     */
     public OAuthOwnerConsumer(String accessToken, ActionApi api) {
         this.AccessToken = accessToken;
         this.api = api;
@@ -20,16 +32,25 @@ public class OAuthOwnerConsumer implements Auth {
         logger.info("OAuthOwnerConsumer initialized with access token");
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean login() throws Exception {
         return isLoggedIn();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void logout() throws Exception {
         // No-op for OAuth owner-only consumer as tokens are static
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getUsername() {
         // This might need to be fetched via API if not known, but for now we return
@@ -44,6 +65,9 @@ public class OAuthOwnerConsumer implements Auth {
 
     private String cachedUsername = null;
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getRUsername() throws Exception {
         if (cachedUsername != null) {
@@ -62,6 +86,9 @@ public class OAuthOwnerConsumer implements Auth {
         return cachedUsername;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isLoggedIn() throws Exception {
         try {
@@ -73,6 +100,9 @@ public class OAuthOwnerConsumer implements Auth {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public java.util.Map<String, String> getAuthHeaders() throws Exception {
         java.util.Map<String, String> headers = new java.util.HashMap<>();
