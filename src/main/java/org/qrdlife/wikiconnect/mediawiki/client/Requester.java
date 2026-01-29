@@ -65,6 +65,12 @@ public class Requester {
         this.context = context;
     }
 
+    /**
+     * Sets the authentication handler for this requester.
+     * 
+     * @param auth The {@link org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth}
+     *             instance to use.
+     */
     public void setAuth(org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth) {
         this.auth = auth;
     }

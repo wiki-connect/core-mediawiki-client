@@ -10,7 +10,6 @@ import java.util.logging.Logger;
 
 /**
  * Handles user authentication with the MediaWiki API.
- * <p>
  * This class supports:
  * <ul>
  * <li>Logging in with username and password</li>
@@ -18,7 +17,6 @@ import java.util.logging.Logger;
  * <li>Checking if a user is authenticated</li>
  * <li>Fetching the real username as recognized by MediaWiki</li>
  * </ul>
- * </p>
  *
  * <p>
  * Typical usage example:

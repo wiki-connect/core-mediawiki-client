@@ -1,5 +1,8 @@
 package org.qrdlife.wikiconnect.mediawiki.client.Auth;
 
+/**
+ * Interface defining the contract for authentication mechanisms.
+ */
 public interface Auth {
     /**
      * Attempts to log in using the configured credentials.
