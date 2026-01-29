@@ -3,6 +3,7 @@ package org.qrdlife.wikiconnect.mediawiki.client;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.qrdlife.wikiconnect.mediawiki.client.Auth.UserAndPassword;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 
@@ -91,7 +92,7 @@ class ActionApiTest {
 
     @Test
     void testSetAuth() {
-        Auth mockAuth = mock(Auth.class);
+        UserAndPassword mockAuth = mock(UserAndPassword.class);
         ActionApi result = actionApi.setAuth(mockAuth);
 
         assertSame(actionApi, result);

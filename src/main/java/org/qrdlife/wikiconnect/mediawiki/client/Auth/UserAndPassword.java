@@ -1,6 +1,8 @@
-package org.qrdlife.wikiconnect.mediawiki.client;
+package org.qrdlife.wikiconnect.mediawiki.client.Auth;
 
 import org.json.JSONObject;
+import org.qrdlife.wikiconnect.mediawiki.client.ActionApi;
+import org.qrdlife.wikiconnect.mediawiki.client.Requester;
 
 import java.io.IOException;
 import java.util.Map;
@@ -11,14 +13,17 @@ import java.util.logging.Logger;
  * <p>
  * This class supports:
  * <ul>
- *   <li>Logging in with username and password</li>
- *   <li>Logging out of the current session</li>
- *   <li>Checking if a user is authenticated</li>
- *   <li>Fetching the real username as recognized by MediaWiki</li>
+ * <li>Logging in with username and password</li>
+ * <li>Logging out of the current session</li>
+ * <li>Checking if a user is authenticated</li>
+ * <li>Fetching the real username as recognized by MediaWiki</li>
  * </ul>
  * </p>
  *
- * <p>Typical usage example:</p>
+ * <p>
+ * Typical usage example:
+ * </p>
+ * 
  * <pre>{@code
  * ActionApi api = new ActionApi(...);
  * Auth auth = new Auth("username", "password", api);
@@ -28,9 +33,9 @@ import java.util.logging.Logger;
  * }
  * }</pre>
  */
-public class Auth {
+public class UserAndPassword implements Auth {
 
-    private static final Logger logger = Logger.getLogger(Auth.class.getName());
+    private static final Logger logger = Logger.getLogger(UserAndPassword.class.getName());
 
     private final String Username;
     private final String Password;
@@ -43,9 +48,9 @@ public class Auth {
      *
      * @param username the MediaWiki username.
      * @param password the MediaWiki password.
-     * @param api the {@link ActionApi} instance for handling requests.
+     * @param api      the {@link ActionApi} instance for handling requests.
      */
-    public Auth(String username, String password, ActionApi api) {
+    public UserAndPassword(String username, String password, ActionApi api) {
         this.Username = username;
         this.Password = password;
         this.api = api;
@@ -59,8 +64,10 @@ public class Auth {
      *
      * @return {@code true} if the login was successful, {@code false} otherwise.
      * @throws Exception if an error occurs while retrieving the login token
-     *                   or sending the login request (e.g., network errors, JSON parsing issues).
+     *                   or sending the login request (e.g., network errors, JSON
+     *                   parsing issues).
      */
+    @Override
     public boolean login() throws Exception {
         logger.info("Attempting to log in user: " + Username);
         if (isLoggedIn()) {
@@ -76,8 +83,7 @@ public class Auth {
                 "lgname", Username,
                 "lgpassword", Password,
                 "lgtoken", token,
-                "format", "json"
-        );
+                "format", "json");
 
         // Send the login request to the API
         JSONObject res = new JSONObject(requester.post("login", perms));
@@ -99,9 +105,10 @@ public class Auth {
      * Logs out the currently authenticated user from the MediaWiki API.
      *
      * @throws IOException if the user is not logged in.
-     * @throws Exception if an error occurs while retrieving the CSRF token
-     *                   or sending the logout request.
+     * @throws Exception   if an error occurs while retrieving the CSRF token
+     *                     or sending the logout request.
      */
+    @Override
     public void logout() throws Exception {
         if (!isLoggedIn()) {
             logger.warning("User is not logged in. Cannot perform logout.");
@@ -113,18 +120,19 @@ public class Auth {
 
         Map<String, Object> params = Map.of(
                 "token", token,
-                "format", "json"
-        );
+                "format", "json");
         requester.post("logout", params);
 
         logger.info("User logged out successfully: " + RUsername);
     }
 
     /**
-     * Returns the configured MediaWiki username (the one provided to the constructor).
+     * Returns the configured MediaWiki username (the one provided to the
+     * constructor).
      *
      * @return the username used during initialization.
      */
+    @Override
     public String getUsername() {
         return Username;
     }
@@ -137,14 +145,15 @@ public class Auth {
      * </p>
      *
      * @return the real username of the authenticated user.
-     * @throws Exception if the API request fails (e.g., network error, JSON parsing error).
+     * @throws Exception if the API request fails (e.g., network error, JSON parsing
+     *                   error).
      */
+    @Override
     public String getRUsername() throws Exception {
         if (RUsername == null) {
             Map<String, Object> perms = Map.of(
-                "meta", "userinfo",
-                "format", "json"
-            );
+                    "meta", "userinfo",
+                    "format", "json");
             JSONObject res = new JSONObject(requester.get("query", perms));
             JSONObject userinfo = res.getJSONObject("query").getJSONObject("userinfo");
 
@@ -157,15 +166,16 @@ public class Auth {
      * Checks if the current user session is authenticated with the MediaWiki API.
      *
      * @return {@code true} if the user is logged in, {@code false} otherwise.
-     * @throws Exception if the API request fails (e.g., network error, JSON parsing error).
+     * @throws Exception if the API request fails (e.g., network error, JSON parsing
+     *                   error).
      */
+    @Override
     public boolean isLoggedIn() throws Exception {
         logger.info("Checking if user is logged in");
 
         Map<String, Object> perms = Map.of(
                 "meta", "userinfo",
-                "format", "json"
-        );
+                "format", "json");
 
         String response = requester.get("query", perms);
         if (response == null || response.isEmpty()) {
@@ -184,5 +194,13 @@ public class Auth {
             logger.warning("User is not logged in");
             return false;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Map<String, String> getAuthHeaders() throws Exception {
+        return new java.util.HashMap<>();
     }
 }
