@@ -23,7 +23,10 @@ import java.util.Map;
  * validated for errors.
  * </p>
  *
- * <p>Typical usage:</p>
+ * <p>
+ * Typical usage:
+ * </p>
+ * 
  * <pre>{@code
  * Requester requester = new Requester(client, "https://en.wikipedia.org/w/api.php", globalParams, context);
  * String response = requester.post("login", Map.of("lgname", "user", "lgpassword", "pass"));
@@ -43,20 +46,27 @@ public class Requester {
     /** The HTTP context used for managing cookies and session state. */
     private final HttpClientContext context;
 
+    /** Auth handler */
+    private org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth;
+
     /**
      * Creates a new {@code Requester}.
      *
-     * @param httpClient the HTTP client used for communication.
-     * @param apiUrl the MediaWiki API endpoint.
+     * @param httpClient   the HTTP client used for communication.
+     * @param apiUrl       the MediaWiki API endpoint.
      * @param globalParams global parameters added to all requests (may be null).
-     * @param context HTTP context used for cookies/session management.
+     * @param context      HTTP context used for cookies/session management.
      */
     public Requester(CloseableHttpClient httpClient, String apiUrl, Map<String, Object> globalParams,
-                     HttpClientContext context) {
+            HttpClientContext context) {
         this.httpClient = httpClient;
         this.apiUrl = apiUrl;
         this.globalParams = globalParams;
         this.context = context;
+    }
+
+    public void setAuth(org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth) {
+        this.auth = auth;
     }
 
     /**
@@ -91,8 +101,9 @@ public class Requester {
      * @param params the request parameters.
      * @return the raw JSON response as a string.
      * @throws EmptyResponseException if no response is received from the server.
-     * @throws UsageException if the API response contains an error object.
-     * @throws Exception if an unexpected error occurs during request execution.
+     * @throws UsageException         if the API response contains an error object.
+     * @throws Exception              if an unexpected error occurs during request
+     *                                execution.
      */
     private String sendRequest(String method, String action, Map<String, Object> params) throws Exception {
         ClassicRequestBuilder builder;
@@ -105,16 +116,26 @@ public class Requester {
             throw new IllegalArgumentException("Unsupported HTTP method: " + method);
         }
 
-        builder.setUri(new URI(apiUrl));
-        builder.addParameter("action", action);
-
-        if (globalParams != null) {
-            for (Map.Entry<String, Object> entry : globalParams.entrySet()) {
-                builder.addParameter(entry.getKey(), entry.getValue().toString());
+        if (auth != null) {
+            Map<String, String> authHeaders = auth.getAuthHeaders();
+            for (Map.Entry<String, String> entry : authHeaders.entrySet()) {
+                builder.addHeader(entry.getKey(), entry.getValue());
             }
         }
 
-        for (Map.Entry<String, Object> entry : params.entrySet()) {
+        builder.setUri(new URI(apiUrl));
+        builder.addParameter("action", action);
+
+        java.util.Map<String, Object> requestParams = new java.util.HashMap<>();
+
+        if (globalParams != null) {
+            for (Map.Entry<String, Object> entry : globalParams.entrySet()) {
+                requestParams.put(entry.getKey(), entry.getValue());
+            }
+        }
+        requestParams.putAll(params);
+
+        for (Map.Entry<String, Object> entry : requestParams.entrySet()) {
             builder.addParameter(entry.getKey(), entry.getValue().toString());
         }
 
@@ -142,9 +163,10 @@ public class Requester {
      * Checks the API response for errors and throws exceptions if necessary.
      *
      * @param response the raw JSON response.
-     * @param action the API action that was executed.
-     * @throws UsageException if the response contains an error or indicates failure.
-     * @throws JSONException if the response cannot be parsed as valid JSON.
+     * @param action   the API action that was executed.
+     * @throws UsageException if the response contains an error or indicates
+     *                        failure.
+     * @throws JSONException  if the response cannot be parsed as valid JSON.
      */
     private void checkForErrors(String response, String action) throws UsageException, JSONException {
         JSONObject result = new JSONObject(response);
@@ -154,8 +176,7 @@ public class Requester {
             throw new UsageException(
                     error.optString("code", "unknown"),
                     error.optString("info", "No error information provided"),
-                    response
-            );
+                    response);
         }
 
         if (result.has(action)) {

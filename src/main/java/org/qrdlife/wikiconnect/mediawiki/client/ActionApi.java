@@ -4,7 +4,6 @@ import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
-import org.qrdlife.wikiconnect.mediawiki.client.Auth.UserAndPassword;
 import org.qrdlife.wikiconnect.mediawiki.client.cookie.FileCookieJar;
 
 import java.io.File;
@@ -20,12 +19,15 @@ import java.util.logging.Logger;
  * to send API requests.
  * </p>
  *
- * <p>Typical usage example:</p>
+ * <p>
+ * Typical usage example:
+ * </p>
+ * 
  * <pre>{@code
  * ActionApi api = new ActionApi("https://en.wikipedia.org/w/api.php")
- *     .setUserAgent("MyBot/1.0")
- *     .setFileCookie(new File("cookies"))
- *     .build();
+ *         .setUserAgent("MyBot/1.0")
+ *         .setFileCookie(new File("cookies"))
+ *         .build();
  *
  * Auth auth = new Auth("username", "password", api);
  * if (auth.login()) {
@@ -60,7 +62,7 @@ public class ActionApi {
     private final HttpClientContext context;
 
     /** Authentication handler (optional). */
-    private UserAndPassword auth;
+    private org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth;
 
     /**
      * Creates a new {@code ActionApi} instance with the given API endpoint.
@@ -116,13 +118,17 @@ public class ActionApi {
     }
 
     /**
-     * Associates an {@link UserAndPassword} instance with this API client.
+     * Associates an {@link org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth}
+     * instance with this API client.
      *
      * @param auth the authentication handler.
      * @return this instance for method chaining.
      */
-    public ActionApi setAuth(UserAndPassword auth) {
+    public ActionApi setAuth(org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth) {
         this.auth = auth;
+        if (requester != null) {
+            requester.setAuth(auth);
+        }
         logger.info("Authentication set");
         return this;
     }
@@ -140,6 +146,9 @@ public class ActionApi {
                     .build();
             context.setCookieStore(cookieStore);
             this.requester = new Requester(client, apiUrl, globalParams, context);
+            if (this.auth != null) {
+                this.requester.setAuth(this.auth);
+            }
             logger.info("ActionApi build completed with userAgent: "
                     + (userAgent == null ? defaultUserAgent : userAgent));
         } catch (Exception e) {
@@ -169,13 +178,15 @@ public class ActionApi {
     }
 
     /**
-     * Returns the {@link UserAndPassword} instance associated with this API client.
+     * Returns the {@link org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth}
+     * instance associated with this API client.
      *
      * @return the authentication handler, or {@code null} if none is set.
      */
-    public UserAndPassword getAuth() {
+    public org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth getAuth() {
         return auth;
     }
+
     /**
      * Returns the {@link Requester} instance used by this {@code ActionApi}.
      * <p>
