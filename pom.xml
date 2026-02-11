@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
     <name>Core MediaWiki Client</name>
     <description>A lightweight Java client for interacting with MediaWiki APIs.</description>
-    <url>https://github.com/wikiconnect/core-mediawiki-client</url>
+    <url>https://github.com/wiki-connect/core-mediawiki-client</url>
 
     <licenses>
         <license>
