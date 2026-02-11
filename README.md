@@ -11,7 +11,7 @@ This library provides simple and efficient access to MediaWiki endpoints for bui
 - **Artifact ID:** `core-mediawiki-client`
 - **License:** [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html)
 
-Repository: [GitHub](https://github.com/wikiconnect/core-mediawiki-client)
+Repository: [GitHub](https://github.com/wiki-connect/core-mediawiki-client)
 
 ---
 
