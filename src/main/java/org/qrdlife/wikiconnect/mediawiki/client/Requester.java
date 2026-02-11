@@ -13,6 +13,7 @@ import org.qrdlife.wikiconnect.mediawiki.client.Exception.EmptyResponseException
 import org.qrdlife.wikiconnect.mediawiki.client.Exception.UsageException;
 
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 /**
@@ -116,8 +117,10 @@ public class Requester {
 
         if ("POST".equalsIgnoreCase(method)) {
             builder = ClassicRequestBuilder.post();
+            builder.setCharset(StandardCharsets.UTF_8);
         } else if ("GET".equalsIgnoreCase(method)) {
             builder = ClassicRequestBuilder.get();
+            builder.setCharset(StandardCharsets.UTF_8);
         } else {
             throw new IllegalArgumentException("Unsupported HTTP method: " + method);
         }

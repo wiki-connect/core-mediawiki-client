@@ -6,7 +6,7 @@
 
     <groupId>org.qrdlife.wikiconnect</groupId>
     <artifactId>core-mediawiki-client</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
     <packaging>jar</packaging>
     <name>Core MediaWiki Client</name>
     <description>A lightweight Java client for interacting with MediaWiki APIs.</description>
