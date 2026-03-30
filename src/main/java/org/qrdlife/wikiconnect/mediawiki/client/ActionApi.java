@@ -93,12 +93,19 @@ public class ActionApi {
         return this;
     }
 
+    public ActionApi setCookieStore(BasicCookieStore cookieStore) {
+        this.cookieStore = cookieStore;
+        logger.info("Cookie store set");
+        return this;
+    }
+
     /**
      * Sets a cookie store that persists session cookies in a file.
      *
      * @param file the file to store cookies.
      * @return this instance for method chaining.
      */
+    @Deprecated
     public ActionApi setFileCookie(File file) {
         this.cookieStore = new FileCookieJar(file);
         logger.info("File cookie set with file: " + file.getPath());

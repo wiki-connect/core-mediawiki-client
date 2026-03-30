@@ -82,6 +82,15 @@ class ActionApiTest {
     }
 
     @Test
+    void testSetCookieStore() {
+        BasicCookieStore customCookieStore = new BasicCookieStore();
+        ActionApi result = actionApi.setCookieStore(customCookieStore);
+
+        assertSame(actionApi, result);
+        assertSame(customCookieStore, getPrivateField(actionApi, "cookieStore"));
+    }
+
+    @Test
     void testSetUserAgent() {
         String userAgent = "TestBot/1.0";
         ActionApi result = actionApi.setUserAgent(userAgent);
