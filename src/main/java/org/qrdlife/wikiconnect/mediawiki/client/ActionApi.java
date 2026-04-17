@@ -93,6 +93,12 @@ public class ActionApi {
         return this;
     }
 
+    /**
+     * Sets a custom cookie store for maintaining session persistence.
+     *
+     * @param cookieStore the {@link BasicCookieStore} to be used.
+     * @return this instance for method chaining.
+     */
     public ActionApi setCookieStore(BasicCookieStore cookieStore) {
         this.cookieStore = cookieStore;
         logger.info("Cookie store set");
