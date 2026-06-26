@@ -64,8 +64,11 @@ public class ActionApi {
     /** Authentication handler (optional). */
     private org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth;
 
-    /** Configured RequestConfig for timeouts. */
-    private org.apache.hc.client5.http.config.RequestConfig requestConfig = null;
+    /** Connect timeout in milliseconds. */
+    private int connectTimeoutMs = 30000;
+
+    /** Socket/Response timeout in milliseconds. */
+    private int socketTimeoutMs = 30000;
 
     /** Maximum retry attempts for transient errors. */
     private int maxRetries = 0;
@@ -162,10 +165,8 @@ public class ActionApi {
      * @return this instance for method chaining.
      */
     public ActionApi setTimeout(int connectTimeoutMs, int socketTimeoutMs) {
-        this.requestConfig = org.apache.hc.client5.http.config.RequestConfig.custom()
-                .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(connectTimeoutMs))
-                .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(socketTimeoutMs))
-                .build();
+        this.connectTimeoutMs = connectTimeoutMs;
+        this.socketTimeoutMs = socketTimeoutMs;
         logger.info("Timeouts set - Connect: " + connectTimeoutMs + "ms, Socket: " + socketTimeoutMs + "ms");
         return this;
     }
@@ -209,12 +210,23 @@ public class ActionApi {
      */
     public ActionApi build() {
         try {
+            org.apache.hc.client5.http.config.ConnectionConfig connConfig = org.apache.hc.client5.http.config.ConnectionConfig.custom()
+                    .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(connectTimeoutMs))
+                    .setSocketTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(socketTimeoutMs))
+                    .build();
+
+            org.apache.hc.client5.http.io.HttpClientConnectionManager cm = org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder.create()
+                    .setDefaultConnectionConfig(connConfig)
+                    .build();
+
+            org.apache.hc.client5.http.config.RequestConfig reqConfig = org.apache.hc.client5.http.config.RequestConfig.custom()
+                    .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(socketTimeoutMs))
+                    .build();
+
             CloseableHttpClient client = HttpClients.custom()
+                    .setConnectionManager(cm)
+                    .setDefaultRequestConfig(reqConfig)
                     .setUserAgent(userAgent == null ? DEFAULT_USER_AGENT : userAgent)
-                    .setDefaultRequestConfig(requestConfig != null ? requestConfig : org.apache.hc.client5.http.config.RequestConfig.custom()
-                            .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofSeconds(30))
-                            .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofSeconds(30))
-                            .build())
                     .build();
             context.setCookieStore(cookieStore);
             this.requester = new Requester(client, apiUrl, globalParams, context, maxRetries);

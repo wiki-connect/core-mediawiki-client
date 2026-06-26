@@ -73,6 +73,7 @@ class ActionApiTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void testSetFileCookie() {
         File cookieFile = new File(tempDir, "test-cookies.txt");
         ActionApi result = actionApi.setFileCookie(cookieFile);

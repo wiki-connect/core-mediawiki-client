@@ -10,9 +10,6 @@ import org.json.JSONTokener;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,7 +69,7 @@ public class FileCookieJar extends BasicCookieStore {
                     cookie.setDomain(obj.optString("domain", null));
                     cookie.setPath(obj.optString("path", null));
                     if (obj.has("expiry")) {
-                        cookie.setExpiryDate(Date.from(Instant.ofEpochMilli(obj.getLong("expiry"))));
+                        cookie.setExpiryDate(Instant.ofEpochMilli(obj.getLong("expiry")));
                     }
                     if (obj.has("secure")) {
                         cookie.setSecure(obj.getBoolean("secure"));
@@ -97,8 +94,8 @@ public class FileCookieJar extends BasicCookieStore {
             obj.put("value", cookie.getValue());
             obj.put("domain", cookie.getDomain());
             obj.put("path", cookie.getPath());
-            if (cookie.getExpiryDate() != null) {
-                obj.put("expiry", cookie.getExpiryDate().toInstant().toEpochMilli());
+            if (cookie.getExpiryInstant() != null) {
+                obj.put("expiry", cookie.getExpiryInstant().toEpochMilli());
             }
             obj.put("secure", cookie.isSecure());
             jsonArray.put(obj);

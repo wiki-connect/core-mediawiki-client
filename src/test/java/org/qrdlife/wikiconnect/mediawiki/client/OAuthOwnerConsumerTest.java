@@ -18,6 +18,7 @@ import static org.mockito.Mockito.*;
  * Unit tests for OAuthOwnerConsumer.
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings("unchecked")
 class OAuthOwnerConsumerTest {
 
     @Mock
