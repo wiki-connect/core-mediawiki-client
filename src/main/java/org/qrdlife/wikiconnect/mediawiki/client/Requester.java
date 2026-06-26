@@ -36,6 +36,8 @@ import java.util.Map;
  */
 public class Requester {
 
+    private static final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(Requester.class.getName());
+
     /** The underlying Apache HTTP client used to send requests. */
     private final CloseableHttpClient httpClient;
 
@@ -51,6 +53,9 @@ public class Requester {
     /** Auth handler */
     private org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth;
 
+    /** Maximum retry attempts for transient errors. */
+    private final int maxRetries;
+
     /**
      * Creates a new {@code Requester}.
      *
@@ -61,10 +66,25 @@ public class Requester {
      */
     public Requester(CloseableHttpClient httpClient, String apiUrl, Map<String, Object> globalParams,
             HttpClientContext context) {
+        this(httpClient, apiUrl, globalParams, context, 0);
+    }
+
+    /**
+     * Creates a new {@code Requester} with retry capability.
+     *
+     * @param httpClient   the HTTP client used for communication.
+     * @param apiUrl       the MediaWiki API endpoint.
+     * @param globalParams global parameters added to all requests (may be null).
+     * @param context      HTTP context used for cookies/session management.
+     * @param maxRetries   maximum retry attempts for transient errors.
+     */
+    public Requester(CloseableHttpClient httpClient, String apiUrl, Map<String, Object> globalParams,
+            HttpClientContext context, int maxRetries) {
         this.httpClient = httpClient;
         this.apiUrl = apiUrl;
         this.globalParams = globalParams;
         this.context = context;
+        this.maxRetries = maxRetries;
     }
 
     /**
@@ -143,22 +163,46 @@ public class Requester {
             builder.addParameter(entry.getKey(), entry.getValue().toString());
         }
 
-        ClassicHttpResponse response = null;
-        try {
-            ClassicHttpRequest request = builder.build();
-            response = httpClient.executeOpen(null, request, context);
+        int attempts = 0;
+        long backoffMs = 100;
+        while (true) {
+            ClassicHttpResponse response = null;
+            try {
+                ClassicHttpRequest request = builder.build();
+                response = httpClient.executeOpen(null, request, context);
 
-            HttpEntity entity = response.getEntity();
-            if (entity != null) {
-                String responseText = EntityUtils.toString(entity);
-                checkForErrors(responseText, action);
-                return responseText;
-            } else {
-                throw new EmptyResponseException("Failed to get server response");
-            }
-        } finally {
-            if (response != null) {
-                response.close();
+                int statusCode = response.getCode();
+                if (statusCode >= 500 && statusCode < 600 && "GET".equalsIgnoreCase(method) && attempts < maxRetries) {
+                    attempts++;
+                    logger.warning("Transient 5xx error (" + statusCode + ") on attempt " + attempts + ". Retrying in " + backoffMs + "ms...");
+                    response.close();
+                    response = null;
+                    Thread.sleep(backoffMs);
+                    backoffMs = Math.min(backoffMs * 2, 5000);
+                    continue;
+                }
+
+                HttpEntity entity = response.getEntity();
+                if (entity != null) {
+                    String responseText = EntityUtils.toString(entity);
+                    checkForErrors(responseText, action);
+                    return responseText;
+                } else {
+                    throw new EmptyResponseException("Failed to get server response");
+                }
+            } catch (java.io.IOException e) {
+                if ("GET".equalsIgnoreCase(method) && attempts < maxRetries) {
+                    attempts++;
+                    logger.warning("Transient IOException (" + e.getMessage() + ") on attempt " + attempts + ". Retrying in " + backoffMs + "ms...");
+                    Thread.sleep(backoffMs);
+                    backoffMs = Math.min(backoffMs * 2, 5000);
+                    continue;
+                }
+                throw e;
+            } finally {
+                if (response != null) {
+                    response.close();
+                }
             }
         }
     }

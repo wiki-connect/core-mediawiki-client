@@ -67,6 +67,9 @@ public class ActionApi {
     /** Configured RequestConfig for timeouts. */
     private org.apache.hc.client5.http.config.RequestConfig requestConfig = null;
 
+    /** Maximum retry attempts for transient errors. */
+    private int maxRetries = 0;
+
     /**
      * Creates a new {@code ActionApi} instance with the given API endpoint.
      *
@@ -168,6 +171,18 @@ public class ActionApi {
     }
 
     /**
+     * Sets the maximum number of retry attempts for transient HTTP failures.
+     *
+     * @param maxRetries the maximum number of retries.
+     * @return this instance for method chaining.
+     */
+    public ActionApi setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+        logger.info("Max retries set to: " + maxRetries);
+        return this;
+    }
+
+    /**
      * Associates an {@link org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth}
      * instance with this API client.
      *
@@ -202,7 +217,7 @@ public class ActionApi {
                             .build())
                     .build();
             context.setCookieStore(cookieStore);
-            this.requester = new Requester(client, apiUrl, globalParams, context);
+            this.requester = new Requester(client, apiUrl, globalParams, context, maxRetries);
             if (this.auth != null) {
                 this.requester.setAuth(this.auth);
             }
