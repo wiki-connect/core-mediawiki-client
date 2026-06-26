@@ -39,10 +39,9 @@ public class Token {
      * @param type The token type (e.g., "login", "csrf").
      * @return The retrieved token string.
      *
-     * @throws JSONException If JSON parsing fails.
-     * @throws Exception     For any other unexpected errors.
+     * @throws Exception     For any unexpected errors.
      */
-    public String get(String type) throws JSONException, Exception {
+    public String get(String type) throws Exception {
         Map<String, Object> perms = Map.of(
                 "meta", "tokens",
                 "type", type,
