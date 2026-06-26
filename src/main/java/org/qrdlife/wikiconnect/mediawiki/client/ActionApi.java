@@ -50,7 +50,7 @@ public class ActionApi {
     private Requester requester;
 
     /** The default User-Agent string for requests. */
-    private final String defaultUserAgent = "wikiconnect-mediawiki-client/1.0";
+    private static final String DEFAULT_USER_AGENT = "wikiconnect-mediawiki-client/1.0";
 
     /** Custom User-Agent string (if set). */
     private String userAgent = null;
@@ -64,12 +64,32 @@ public class ActionApi {
     /** Authentication handler (optional). */
     private org.qrdlife.wikiconnect.mediawiki.client.Auth.Auth auth;
 
+    /** Configured RequestConfig for timeouts. */
+    private org.apache.hc.client5.http.config.RequestConfig requestConfig = null;
+
     /**
      * Creates a new {@code ActionApi} instance with the given API endpoint.
      *
      * @param apiUrl the full MediaWiki API endpoint URL.
+     * @throws IllegalArgumentException if {@code apiUrl} is null, empty, or has an invalid scheme.
      */
     public ActionApi(String apiUrl) {
+        if (apiUrl == null || apiUrl.trim().isEmpty()) {
+            throw new IllegalArgumentException("API URL cannot be null or empty");
+        }
+        try {
+            java.net.URI uri = new java.net.URI(apiUrl);
+            String scheme = uri.getScheme();
+            if (scheme == null || (!scheme.equalsIgnoreCase("http") && !scheme.equalsIgnoreCase("https"))) {
+                throw new IllegalArgumentException("Unsupported API URL scheme: " + scheme);
+            }
+            if (scheme.equalsIgnoreCase("http")) {
+                logger.warning("Using unencrypted HTTP protocol for MediaWiki API: " + apiUrl);
+            }
+        } catch (java.net.URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid API URL: " + apiUrl, e);
+        }
+
         this.apiUrl = apiUrl;
         this.context = HttpClientContext.create();
         this.cookieStore = new BasicCookieStore();
@@ -110,6 +130,7 @@ public class ActionApi {
      *
      * @param file the file to store cookies.
      * @return this instance for method chaining.
+     * @deprecated Use {@link #setCookieStore(BasicCookieStore)} instead.
      */
     @Deprecated
     public ActionApi setFileCookie(File file) {
@@ -127,6 +148,22 @@ public class ActionApi {
     public ActionApi setUserAgent(String userAgent) {
         this.userAgent = userAgent;
         logger.info("User agent set: " + userAgent);
+        return this;
+    }
+
+    /**
+     * Sets connect and socket timeouts for the HTTP client.
+     *
+     * @param connectTimeoutMs the connection timeout in milliseconds.
+     * @param socketTimeoutMs the socket/response timeout in milliseconds.
+     * @return this instance for method chaining.
+     */
+    public ActionApi setTimeout(int connectTimeoutMs, int socketTimeoutMs) {
+        this.requestConfig = org.apache.hc.client5.http.config.RequestConfig.custom()
+                .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(connectTimeoutMs))
+                .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(socketTimeoutMs))
+                .build();
+        logger.info("Timeouts set - Connect: " + connectTimeoutMs + "ms, Socket: " + socketTimeoutMs + "ms");
         return this;
     }
 
@@ -151,11 +188,18 @@ public class ActionApi {
      * <p>
      * This must be called before sending any requests.
      * </p>
+     *
+     * @return this instance for method chaining.
+     * @throws IllegalStateException if building the client fails.
      */
-    public void build() {
+    public ActionApi build() {
         try {
             CloseableHttpClient client = HttpClients.custom()
-                    .setUserAgent(userAgent == null ? defaultUserAgent : userAgent)
+                    .setUserAgent(userAgent == null ? DEFAULT_USER_AGENT : userAgent)
+                    .setDefaultRequestConfig(requestConfig != null ? requestConfig : org.apache.hc.client5.http.config.RequestConfig.custom()
+                            .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofSeconds(30))
+                            .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofSeconds(30))
+                            .build())
                     .build();
             context.setCookieStore(cookieStore);
             this.requester = new Requester(client, apiUrl, globalParams, context);
@@ -163,9 +207,11 @@ public class ActionApi {
                 this.requester.setAuth(this.auth);
             }
             logger.info("ActionApi build completed with userAgent: "
-                    + (userAgent == null ? defaultUserAgent : userAgent));
+                    + (userAgent == null ? DEFAULT_USER_AGENT : userAgent));
+            return this;
         } catch (Exception e) {
             logger.severe("Error during build: " + e.getMessage());
+            throw new IllegalStateException("Failed to build ActionApi client", e);
         }
     }
 

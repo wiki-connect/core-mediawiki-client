@@ -113,8 +113,32 @@ class ActionApiTest {
         ActionApi api = new ActionApi("https://test.wikipedia.org/w/api.php");
         api.setUserAgent("TestBot/1.0");
 
-        assertDoesNotThrow(api::build);
+        ActionApi returnedApi = api.build();
+        assertSame(api, returnedApi);
         assertNotNull(api.getRequester());
+    }
+
+    @Test
+    void testConstructorValidation() {
+        assertThrows(IllegalArgumentException.class, () -> new ActionApi(null));
+        assertThrows(IllegalArgumentException.class, () -> new ActionApi("   "));
+        assertThrows(IllegalArgumentException.class, () -> new ActionApi("ftp://test.org"));
+        assertThrows(IllegalArgumentException.class, () -> new ActionApi("javascript:alert(1)"));
+        assertDoesNotThrow(() -> new ActionApi("http://localhost/w/api.php"));
+    }
+
+    @Test
+    void testSetTimeout() {
+        ActionApi api = new ActionApi("https://test.wikipedia.org/w/api.php");
+        assertSame(api, api.setTimeout(5000, 10000));
+    }
+
+    @Test
+    void testBuildPropagatesException() {
+        ActionApi api = new ActionApi("https://test.wikipedia.org/w/api.php");
+        // We set context to null to trigger a NullPointerException during build()
+        injectPrivateField(api, "context", null);
+        assertThrows(IllegalStateException.class, api::build);
     }
 
     // Helper to read private fields via reflection

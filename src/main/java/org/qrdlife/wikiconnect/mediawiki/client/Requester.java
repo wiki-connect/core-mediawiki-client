@@ -14,6 +14,7 @@ import org.qrdlife.wikiconnect.mediawiki.client.Exception.UsageException;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -135,13 +136,7 @@ public class Requester {
         builder.setUri(new URI(apiUrl));
         builder.addParameter("action", action);
 
-        java.util.Map<String, Object> requestParams = new java.util.HashMap<>();
-
-        if (globalParams != null) {
-            for (Map.Entry<String, Object> entry : globalParams.entrySet()) {
-                requestParams.put(entry.getKey(), entry.getValue());
-            }
-        }
+        Map<String, Object> requestParams = new HashMap<>(globalParams != null ? globalParams : Map.of());
         requestParams.putAll(params);
 
         for (Map.Entry<String, Object> entry : requestParams.entrySet()) {
