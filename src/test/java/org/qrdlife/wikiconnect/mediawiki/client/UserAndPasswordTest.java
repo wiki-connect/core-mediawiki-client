@@ -156,4 +156,28 @@ class UserAndPasswordTest {
         String result = auth.getUsername();
         assertEquals(testUsername, result);
     }
+
+    @Test
+    void testCharArrayConstructorAndZeroing() throws Exception {
+        char[] passwordArray = new char[]{'s', 'e', 'c', 'r', 'e', 't'};
+        UserAndPassword charAuth = new UserAndPassword("testuser", passwordArray, mockApi);
+
+        when(mockApi.getToken("login")).thenReturn(testToken);
+        when(mockRequester.get("query", Map.of("meta", "userinfo", "format", "json")))
+                .thenReturn("{\"query\":{\"userinfo\":{\"id\":0,\"name\":\"*\"}}}\n");
+        when(mockRequester.post(eq("login"), any(Map.class)))
+                .thenReturn("{"
+                        + "\"login\": {"
+                        + "\"result\": \"Success\","
+                        + "\"lgusername\": \"TestUser\""
+                        + "}"
+                        + "}"
+                );
+
+        boolean result = charAuth.login();
+        assertTrue(result);
+        for (char c : passwordArray) {
+            assertEquals('\0', c);
+        }
+    }
 }

@@ -13,7 +13,7 @@ import org.qrdlife.wikiconnect.mediawiki.client.Requester;
  * </p>
  */
 public class OAuthOwnerConsumer implements Auth {
-    private final String AccessToken;
+    private final String accessToken;
     private final ActionApi api;
     private final Requester requester;
     private final Logger logger = Logger.getLogger(OAuthOwnerConsumer.class.getName());
@@ -25,7 +25,7 @@ public class OAuthOwnerConsumer implements Auth {
      * @param api         The ActionApi instance.
      */
     public OAuthOwnerConsumer(String accessToken, ActionApi api) {
-        this.AccessToken = accessToken;
+        this.accessToken = accessToken;
         this.api = api;
         this.requester = api.getRequester();
         this.api.setAuth(this);
@@ -58,7 +58,7 @@ public class OAuthOwnerConsumer implements Auth {
         try {
             return getRUsername();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.warning("Failed to fetch username for OAuth consumer: " + e.getMessage());
             return null;
         }
     }
@@ -106,7 +106,7 @@ public class OAuthOwnerConsumer implements Auth {
     @Override
     public java.util.Map<String, String> getAuthHeaders() throws Exception {
         java.util.Map<String, String> headers = new java.util.HashMap<>();
-        headers.put("Authorization", "Bearer " + AccessToken);
+        headers.put("Authorization", "Bearer " + accessToken);
         return headers;
     }
 }

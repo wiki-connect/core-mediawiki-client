@@ -35,9 +35,9 @@ public class UserAndPassword implements Auth {
 
     private static final Logger logger = Logger.getLogger(UserAndPassword.class.getName());
 
-    private final String Username;
-    private final String Password;
-    private String RUsername = null;
+    private final String username;
+    private final char[] password;
+    private String rUsername = null;
     private final ActionApi api;
     private final Requester requester;
 
@@ -49,8 +49,19 @@ public class UserAndPassword implements Auth {
      * @param api      the {@link ActionApi} instance for handling requests.
      */
     public UserAndPassword(String username, String password, ActionApi api) {
-        this.Username = username;
-        this.Password = password;
+        this(username, password != null ? password.toCharArray() : null, api);
+    }
+
+    /**
+     * Initializes a new {@code Auth} instance with MediaWiki credentials using a char array.
+     *
+     * @param username the MediaWiki username.
+     * @param password the MediaWiki password as a char array.
+     * @param api      the {@link ActionApi} instance for handling requests.
+     */
+    public UserAndPassword(String username, char[] password, ActionApi api) {
+        this.username = username;
+        this.password = password;
         this.api = api;
         this.requester = api.getRequester();
         this.api.setAuth(this);
@@ -67,7 +78,7 @@ public class UserAndPassword implements Auth {
      */
     @Override
     public boolean login() throws Exception {
-        logger.info("Attempting to log in user: " + Username);
+        logger.info("Attempting to log in user: " + username);
         if (isLoggedIn()) {
             logger.info("This user is already logged in.");
             return true;
@@ -78,8 +89,8 @@ public class UserAndPassword implements Auth {
 
         // Set up the parameters for the login request
         Map<String, Object> perms = Map.of(
-                "lgname", Username,
-                "lgpassword", Password,
+                "lgname", username,
+                "lgpassword", password != null ? new String(password) : "",
                 "lgtoken", token,
                 "format", "json");
 
@@ -90,11 +101,13 @@ public class UserAndPassword implements Auth {
         String result = res.getJSONObject("login").getString("result");
 
         if ("Success".equals(result)) {
-            RUsername = res.getJSONObject("login").getString("lgusername");
-            logger.info("Login successful for user: " + RUsername);
+            rUsername = res.getJSONObject("login").getString("lgusername");
+            logger.info("Login successful for user: " + rUsername);
+            clearPassword();
             return true;
         } else {
-            logger.warning("Login failed for user: " + Username);
+            logger.warning("Login failed for user: " + username);
+            clearPassword();
             return false;
         }
     }
@@ -112,7 +125,7 @@ public class UserAndPassword implements Auth {
             logger.warning("User is not logged in. Cannot perform logout.");
             return;
         }
-        logger.info("Attempting to log out user: " + RUsername);
+        logger.info("Attempting to log out user: " + rUsername);
 
         String token = api.getToken("csrf");
 
@@ -121,7 +134,7 @@ public class UserAndPassword implements Auth {
                 "format", "json");
         requester.post("logout", params);
 
-        logger.info("User logged out successfully: " + RUsername);
+        logger.info("User logged out successfully: " + rUsername);
     }
 
     /**
@@ -132,7 +145,7 @@ public class UserAndPassword implements Auth {
      */
     @Override
     public String getUsername() {
-        return Username;
+        return username;
     }
 
     /**
@@ -148,16 +161,16 @@ public class UserAndPassword implements Auth {
      */
     @Override
     public String getRUsername() throws Exception {
-        if (RUsername == null) {
+        if (rUsername == null) {
             Map<String, Object> perms = Map.of(
                     "meta", "userinfo",
                     "format", "json");
             JSONObject res = new JSONObject(requester.get("query", perms));
             JSONObject userinfo = res.getJSONObject("query").getJSONObject("userinfo");
 
-            RUsername = userinfo.getString("name");
+            rUsername = userinfo.getString("name");
         }
-        return RUsername;
+        return rUsername;
     }
 
     /**
@@ -183,10 +196,10 @@ public class UserAndPassword implements Auth {
         JSONObject userinfo = resJSON.getJSONObject("query").getJSONObject("userinfo");
 
         int id = userinfo.getInt("id");
-        RUsername = userinfo.getString("name");
+        rUsername = userinfo.getString("name");
 
         if (id > 0) {
-            logger.info("User is logged in: " + RUsername);
+            logger.info("User is logged in: " + rUsername);
             return true;
         } else {
             logger.warning("User is not logged in");
@@ -200,5 +213,14 @@ public class UserAndPassword implements Auth {
     @Override
     public Map<String, String> getAuthHeaders() throws Exception {
         return new java.util.HashMap<>();
+    }
+
+    /**
+     * Clears the password from memory by filling the character array with zeros.
+     */
+    private void clearPassword() {
+        if (password != null) {
+            java.util.Arrays.fill(password, '\0');
+        }
     }
 }
