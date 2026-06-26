@@ -61,4 +61,23 @@ class FileCookieJarTest {
         FileCookieJar jar = new FileCookieJar(nonExistent);
         assertTrue(jar.getCookies().isEmpty());
     }
+
+    @Test
+    void testLoadFromMalformedJson() throws Exception {
+        try (java.io.FileWriter writer = new java.io.FileWriter(tempFile)) {
+            writer.write("{ this is malformed json }");
+        }
+        FileCookieJar jar = new FileCookieJar(tempFile);
+        assertTrue(jar.getCookies().isEmpty()); // should handle gracefully and be empty
+    }
+
+    @Test
+    void testLoadFromSerializedFileDoesNotDeserialize() throws Exception {
+        // Create a serialized java object structure in the file
+        try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(new java.io.FileOutputStream(tempFile))) {
+            oos.writeObject(new java.util.ArrayList<String>(java.util.List.of("attacker-crafted-string")));
+        }
+        FileCookieJar jar = new FileCookieJar(tempFile);
+        assertTrue(jar.getCookies().isEmpty()); // should not load and not crash/deserialize Java objects
+    }
 }

@@ -2,10 +2,19 @@ package org.qrdlife.wikiconnect.mediawiki.client.cookie;
 
 import org.apache.hc.client5.http.cookie.BasicCookieStore;
 import org.apache.hc.client5.http.cookie.Cookie;
+import org.apache.hc.client5.http.impl.cookie.BasicClientCookie;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A persistent cookie store backed by a file.
@@ -24,6 +33,8 @@ import java.util.List;
  * }</pre>
  */
 public class FileCookieJar extends BasicCookieStore {
+
+    private static final Logger logger = Logger.getLogger(FileCookieJar.class.getName());
 
     /** The file used to persist cookies between sessions. */
     private final File file;
@@ -50,29 +61,53 @@ public class FileCookieJar extends BasicCookieStore {
             return; // start with an empty store
         }
 
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            Object obj = ois.readObject();
-            if (obj instanceof List<?>) {
-                for (Cookie cookie : (List<Cookie>) obj) {
-                    addCookie(cookie);
+        try (InputStreamReader isr = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
+            JSONArray jsonArray = new JSONArray(new JSONTokener(isr));
+            for (int i = 0; i < jsonArray.length(); i++) {
+                JSONObject obj = jsonArray.getJSONObject(i);
+                String name = obj.optString("name", null);
+                String value = obj.optString("value", null);
+                if (name != null) {
+                    BasicClientCookie cookie = new BasicClientCookie(name, value);
+                    cookie.setDomain(obj.optString("domain", null));
+                    cookie.setPath(obj.optString("path", null));
+                    if (obj.has("expiry")) {
+                        cookie.setExpiryDate(Date.from(Instant.ofEpochMilli(obj.getLong("expiry"))));
+                    }
+                    if (obj.has("secure")) {
+                        cookie.setSecure(obj.getBoolean("secure"));
+                    }
+                    super.addCookie(cookie);
                 }
             }
-        } catch (IOException | ClassNotFoundException e) {
-            // log or ignore, but don't crash
-            e.printStackTrace();
+        } catch (Exception e) {
+            logger.log(Level.WARNING, "Failed to load cookies from file: " + file.getPath(), e);
         }
     }
 
     /**
      * Saves the current cookies to the file.
-     * The cookies are serialized and written to disk.
+     * The cookies are serialized to JSON and written to disk.
      */
     private void saveCookies() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
-            List<Cookie> cookies = new ArrayList<>(getCookies());
-            oos.writeObject(cookies);
+        JSONArray jsonArray = new JSONArray();
+        for (Cookie cookie : getCookies()) {
+            JSONObject obj = new JSONObject();
+            obj.put("name", cookie.getName());
+            obj.put("value", cookie.getValue());
+            obj.put("domain", cookie.getDomain());
+            obj.put("path", cookie.getPath());
+            if (cookie.getExpiryDate() != null) {
+                obj.put("expiry", cookie.getExpiryDate().toInstant().toEpochMilli());
+            }
+            obj.put("secure", cookie.isSecure());
+            jsonArray.put(obj);
+        }
+
+        try (OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8)) {
+            jsonArray.write(osw, 2, 0);
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.log(Level.WARNING, "Failed to save cookies to file: " + file.getPath(), e);
         }
     }
 
