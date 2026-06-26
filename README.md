@@ -1,40 +1,69 @@
-# Core MediaWiki Client
+# Wiki Connect Core MediaWiki Client
 
-A lightweight Java client for interacting with **MediaWiki APIs**.  
-This library provides simple and efficient access to MediaWiki endpoints for building bots, tools, or integrations.
+A lightweight Java library for interacting with the MediaWiki Action API.
 
----
-
-## 📦 Project Information
+## Project Information
 
 - **Group ID:** `org.qrdlife.wikiconnect`
 - **Artifact ID:** `core-mediawiki-client`
 - **License:** [GNU General Public License v3.0](https://www.gnu.org/licenses/gpl-3.0.html)
+- **Repository:** [GitHub](https://github.com/wiki-connect/core-mediawiki-client)
+- **Java Requirement:** 11 or higher
 
-Repository: [GitHub](https://github.com/wiki-connect/core-mediawiki-client)
+## Installation
 
----
-
-## 🔧 Requirements
-
-- **Java:** 11 or higher
-- **Maven:** 3.6+
-
-Dependencies (managed via Maven):
-- [Apache HttpClient 5](https://hc.apache.org/httpcomponents-client-5.4.x/) – HTTP communication
-- [org.json](https://github.com/stleary/JSON-java) – JSON parsing
-- [JUnit 5](https://junit.org/junit5/) – Unit testing (testing)
-- [Mockito](https://site.mockito.org/) – Mocking framework (testing)
-
----
-
-## 🚀 Installation
-
-Add the dependency to your **Maven project**:
+Add the following dependency to your `pom.xml`:
 
 ```xml
 <dependency>
-  <groupId>org.qrdlife.wikiconnect</groupId>
-  <artifactId>core-mediawiki-client</artifactId>
-  <version>{version from a release}</version>
+    <groupId>org.qrdlife.wikiconnect</groupId>
+    <artifactId>core-mediawiki-client</artifactId>
+    <version>1.3.0</version>
 </dependency>
+```
+
+## Usage
+
+### Basic Setup
+```java
+ActionApi api = new ActionApi("https://en.wikipedia.org/w/api.php")
+        .setUserAgent("MyWikiBot/1.0")
+        .build();
+```
+
+### Authentication with Memory Cleanup (char[])
+To prevent passwords from lingering in heap memory:
+```java
+char[] password = new char[]{'s', 'e', 'c', 'r', 'e', 't'};
+UserAndPassword auth = new UserAndPassword("username", password, api);
+
+if (auth.login()) {
+    System.out.println("Login successful!");
+}
+// password array is automatically zeroed out internally after login attempt.
+```
+
+### JSON-Based Session Persistence (Secure Cookie Storage)
+Vulnerability-free session persistence using safe JSON serialization:
+```java
+File cookieFile = new File("session_cookies.json");
+ActionApi api = new ActionApi("https://en.wikipedia.org/w/api.php")
+        .setFileCookie(cookieFile) // Persists session cookies as JSON
+        .build();
+```
+
+### Custom Connection & Socket Timeouts
+Configure timeouts to prevent requests from blocking indefinitely:
+```java
+ActionApi api = new ActionApi("https://en.wikipedia.org/w/api.php")
+        .setTimeout(5000, 15000) // Connect timeout: 5s, Socket timeout: 15s
+        .build();
+```
+
+### Transient Error Retry
+Enable automatic exponential retry for GET requests on transient network or 5xx server issues:
+```java
+ActionApi api = new ActionApi("https://en.wikipedia.org/w/api.php")
+        .setMaxRetries(3) // Will retry transient GET failures up to 3 times
+        .build();
+```
